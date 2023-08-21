@@ -1,0 +1,691 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include<ctype.h>
+int i=0,flag=0;
+int offer=10;
+int pays=499;
+
+typedef struct node
+{
+    int foodcode;
+    char foodname[100];
+    int quantity;
+    float price;
+    struct node *prev;
+    struct node *next;
+} node;
+
+typedef struct head 
+{
+    node *link;
+} head;
+
+void insertatlast(head *he, int foodcode, char foodname[50], int quantity, float price) 
+{
+    node *newnode, *temp;
+    newnode = (node*)malloc(sizeof(node));
+    newnode->foodcode = foodcode;
+    strcpy(newnode->foodname, foodname);
+    newnode->quantity = quantity;
+    newnode->price = price;
+    newnode->next = NULL;
+     newnode->prev = NULL;
+    if (he->link == NULL) 
+   {
+        he->link = newnode;
+        newnode->prev = newnode;
+        newnode->next=he->link;
+    }
+    else 
+    {
+        temp = he->link->prev;
+        temp->next = newnode;
+        newnode->prev = temp;
+        newnode->next = he->link;
+        he->link->prev = newnode;
+    }
+}
+
+void insertatpos(head *he, int pos, int foodcode, char foodname[50], int quantity, float price) 
+{
+    node *temp, *newnode;
+    int i = 1;
+    pos = pos - 1;
+    newnode = (node*)malloc(sizeof(node));
+    newnode->foodcode = foodcode;
+    strcpy(newnode->foodname, foodname);
+    newnode->quantity = quantity;
+    newnode->price = price;
+    newnode->next = NULL;
+    if (pos == 0) 
+   {
+        newnode->next = he->link;
+        newnode->prev = he->link->prev;
+        he->link->prev = newnode;
+        he->link = newnode;
+        newnode->prev->next = newnode;
+    }
+    else 
+    {
+        temp = he->link;
+        while (i < pos) 
+        {
+            temp = temp->next;
+            i++;
+        }
+        newnode->next = temp->next;
+        newnode->prev = temp;
+        temp->next = newnode;
+        newnode->next->prev = newnode;
+    }
+}
+
+void Deletefood(head *he, int key) 
+{
+    node *temp,*a;
+    temp = he->link;
+    if (key == he->link->foodcode)  
+    {
+        he->link = he->link->next;
+        he->link->prev = temp->prev;
+        temp->prev->next = he->link;
+        free(temp);
+    }
+    else 
+    {
+        while (temp->next->foodcode != key) 
+        {
+            temp = temp->next;
+            a = temp->next;
+        }
+        temp->next = temp->next->next;
+        temp->next->prev = temp;
+        free(a);
+    }
+}
+
+
+void display(head *he)  //to display food menu
+{
+    node *temp;
+    temp=he->link;
+    printf("\n");
+    printf("FOOD CODE\tFOOD NAME\t\tPRICE\n");
+    printf("%d\t\t%s\t\t%0.2f",temp->foodcode,temp->foodname,temp->price);
+        temp=temp->next;
+        printf("\n");
+    while(temp!=he->link)
+    {
+
+        printf("%d\t\t%s\t\t%0.2f",temp->foodcode,temp->foodname,temp->price);
+        temp=temp->next;
+        printf("\n");
+    }
+}
+
+void order(head *a, head *he, int fcode, int qty) 
+{
+    node *order;
+    order=(node*)malloc(sizeof(node));
+    order = a->link;
+    while (order->foodcode != fcode) 
+    {
+        order = order->next;
+    }
+    insertatlast(he, fcode, order->foodname, qty, (order->price*qty));
+}
+
+void orderdlist(head *he) //to display ordered list
+{
+    node *temp;
+    temp=he->link;
+    printf("\n");
+    printf("\n                       The orderd food list\n");
+    printf("\nFOOD CODE\tFOOD NAME\t\tQUANTITY\t\tPRICE\n\n");
+    printf("%d\t\t%s\t\t%d\t\t\t%0.2f",temp->foodcode,temp->foodname,temp->quantity,temp->price);
+        temp=temp->next;
+        printf("\n");
+    while(temp!=he->link)
+    {
+        printf("%d\t\t%s\t\t%d\t\t\t%0.2f",temp->foodcode,temp->foodname,temp->quantity,temp->price);
+        temp=temp->next;
+        printf("\n");
+    }
+}
+
+
+
+float nbill(head *he)
+{
+    node *temp;
+    temp=he->link;
+    float amount=0;
+    amount=amount+temp->price;
+    temp=temp->next;
+    while(temp!=he->link)
+    {
+        amount=amount+temp->price;
+        temp=temp->next;
+    }
+    return amount;
+}
+float bill( head *he,int offer,int pay) //to calculate total amount to be pay
+{
+    node *temp;
+    temp=he->link;
+    float amount=0;
+     amount=amount+temp->price;
+        temp=temp->next;
+    while(temp!=he->link)
+    {
+        amount=amount+temp->price;
+        temp=temp->next;
+    }
+    if(offer==10&&pays==499)
+    {
+        if(amount>=pays)
+        amount=(amount-(amount/offer));
+    }
+    else if((offer!=0)==1&&(pay!=0)==1)
+    {
+        if(amount>=pay)
+        amount=(amount-((amount*offer)/100));
+    }
+    return amount;
+}
+int offe(int offer,int pay)
+{
+    if(offer==0)
+    {
+        printf(" ");
+    }
+    else if(offer==10&&pays==499)
+    {
+    printf("\n\n                       OFFER:%d%% off on order above Rs.%d\n\n\n",offer,pays);
+    }
+    else
+    {
+        printf("\n\n                       OFFER:%d%% off on order above Rs.%d\n\n\n",offer,pay);
+    }
+}
+
+
+void main()
+{
+    head o,v,n,s,d;
+    v.link=n.link=s.link=o.link=NULL;
+    int ch,menuch,fcode,qty,adminch,pos,i=0,count;
+    int foodcode,key;
+    char foodname[50];
+    char cusfname[20],cuslname[20],cusaddress[200];
+    char phno[20];
+    int quantity,pay;
+    float price;
+    char uid[20],pwd[20],uid1[20],pwd1[20];
+    insertatlast(&v,1,"Idly    ",1,30);
+    insertatlast(&v,2,"Masal dosa",1,50);
+    insertatlast(&v,3,"Fried rice",1,60);
+    insertatlast(&v,4,"Veg meals",1,100);
+    insertatlast(&n,1,"Grilled chicken",1,250);
+    insertatlast(&n,2,"Mutton curma",1,200);
+    insertatlast(&n,3,"Fish biryani",1,300);
+    insertatlast(&n,4,"Keema samosa",1,50);
+    insertatlast(&s,1,"French fries",1,160);
+    insertatlast(&s,2,"Pav baji",1,85);
+    insertatlast(&s,3,"vada pav",1,75);
+    insertatlast(&s,4,"Chicken roll",1,80);
+
+    char welcome[50]="WELCOME";
+	char welcome2[50]=" TO";
+	char welcome3[50]=" FOOD ORDER";
+	char welcome4[50]=" MANAGEMENT SYSTEM";
+	printf("\n\n\n\n\n\t\t\t");
+	for(int wlc=0; wlc<strlen(welcome);wlc++)
+        {
+		printf(" %c",welcome[wlc]);
+		Sleep(200);
+	}
+	printf("\n\n\t\t\t\t ");
+	for(int wlc2=0; wlc2<strlen(welcome2) ;wlc2++)
+        {
+		printf(" %c",welcome2[wlc2]);
+		Sleep(200);
+	}
+	printf("\n\n\t\t\t ");
+	for(int wlc3=0; wlc3<strlen(welcome3) ;wlc3++)
+    {
+        printf(" %c",welcome3[wlc3]);
+        Sleep(200);
+    }
+    printf("\n\n\t\t\t ");
+    for(int wlc4=0; wlc4<strlen(welcome4) ;wlc4++)
+    {
+        printf(" %c",welcome4[wlc4]);
+        Sleep(200);
+    }
+    Sleep(2000);
+    while(1)
+    {
+        system("cls");
+        mainscr : printf("\n1.New user signup\n2.Login\n3.Admin\n4.exit");
+        printf("\nEnter your choice: ");
+        scanf("%d",&ch);
+        if(ch==1)                                                            //for new users to signup
+        {
+            system("cls");
+            o.link=NULL;
+            newuser : printf("\n   ********************  NEW USER   ********************");
+            printf("\n\n                Please enter your deatails");
+            printf("\n\n                 Enter your first name:");
+            getchar();
+            gets(cusfname);
+
+            printf("\n                 Enter your last name:");
+            gets(cuslname);
+
+           phonenumber: printf("\n                 Enter your phone number:");
+            gets(phno);
+
+            count=0;
+            for(i=0;phno[i]!='\0';i++)
+            {
+                if(isdigit(phno[i]))
+                {
+                    flag=1;
+                    count++;
+                }
+                else
+                {
+                 printf("\n\nPhone number must be digits please enter valid phone number\n");
+                 goto phonenumber;
+                }
+            }
+            if(flag=1)
+            {
+               if(count!=10)
+               {
+                   printf("\nThe phone number must be 10 digits please enter valid number");
+                   goto phonenumber;
+               }
+            }
+            printf("\n                 Enter your address:");
+            gets(cusaddress);
+            Sleep(500);
+            system("cls");
+            printf("\nPlease enter username and password and use this while login\n");
+            printf("\n\n                     Enter username:");
+            scanf("%s",uid1);
+            printf("\n\n                     Enter password:");
+            scanf("%s",pwd1);
+            printf("\n\n                     Registered successfully......!");
+            Sleep(2000);
+            system("cls");
+            goto login;
+        }
+        else if(ch==2)                                                    //for existing user to login
+        {
+            system("cls");
+            login:printf("\n   ********************  LOGIN   ********************");
+            printf("\n\n                     Enter username:");
+            scanf("%s",uid);
+            printf("\n\n                     Enter password:");
+            scanf("%s",pwd);
+            if(strcmp(uid,uid1)==0 &&strcmp(pwd,pwd1)==0)
+            {
+                printf("\n\n                     LOGIN SUCCESSFULL...!");
+                Sleep(2000);
+                system("cls");
+                offe(offer,pay);
+                mainmenu:printf("1.View menu\n2.View previous order\n3.logout");
+                printf("\nEnter the choice:");
+                scanf("%d",&menuch);
+                switch(menuch)
+                {
+                    case 1:foodorder :system("cls");                    //to order food by seeing menu
+                    offe(offer,pay);
+                    printf("1.Veg\n2.Non-veg\n3.Snacks\n");
+                    printf("\nEnter your choice:");
+                    int m;
+                    scanf("%d",&m);
+                    if(m==1)
+                    {
+                        system("cls");
+                        offe(offer,pay);
+                        printf("\nVEG:\n");
+                        display(&v);
+                        printf("\nEnter the food code:");
+                        scanf("%d",&fcode);
+                        quantity1: printf("\nEnter the quantity:");
+                        scanf("%d",&qty);
+                        if(qty==0)
+                      {
+                          printf("\nQuantity can not be zero\n");
+                          goto quantity1;
+                      }
+                      order(&v,&o,fcode,qty);
+                    }
+                    else if(m==2)
+                    {
+                        system("cls");
+                        offe(offer,pay);
+                        printf("\nNON-VEG:\n");
+                        display(&n);
+                        printf("\nEnter the food code:");
+                        scanf("%d",&fcode);
+                        quantity2: printf("\nEnter the quantity:");
+                        scanf("%d",&qty);
+                        if(qty==0)
+                      {
+                          printf("\nQuantity can not be zero\n");
+                          goto quantity2;
+                      }
+                      order(&n,&o,fcode,qty);
+                    }
+                    else if(m==3)
+                    {
+                        system("cls");
+                        offe(offer,pay);
+                        printf("\nSNACKS:\n");
+                        display(&s);
+                        printf("\nEnter the food code:");
+                        scanf("%d",&fcode);
+                        quantity3: printf("\nEnter the quantity:");
+                        scanf("%d",&qty);
+                        if(qty==0)
+                      {
+                          printf("\nQuantity can not be zero\n");
+                          goto quantity3;
+                      }
+                      order(&s,&o,fcode,qty);
+                    }
+                    else
+                    {
+                        goto mainmenu;
+                    }
+                    system("cls");
+                    offe(offer,pay);
+                    orderdlist(&o);
+                    afterorder:printf("\n1.Order more\n2.View previous order\n3.confirm order");
+                    printf("\nEnter the choice: ");
+                    int b;
+                    scanf("%d",&b);
+                    if(b==1)
+                    {
+                        system("cls");
+                        goto foodorder ;
+                    }
+                    else if(b==2)               //view previous order
+                    {
+                        system("cls");
+                        printf("\nCurrent order\n");
+                        orderdlist(&o);
+                        goto afterorder;
+                    }
+                    else if(b==3)   //confirming order
+                    {
+                        system("cls");
+                        orderdlist(&o);
+                        if(nbill(&o)>=100)
+                        {
+                        printf("\n\n           The total bill: %0.2f",nbill(&o));
+                        printf("\n\n           The total amount to pay %0.2f",bill(&o,offer,pay));
+                        printf("\n\nThe food will be delivered to:\n");
+                        printf("\n  %s %s",cusfname,cuslname);
+                        printf("\n  %s",cusaddress);
+                        printf("\n  %s",phno);
+                        printf("\n\n                Enjoy your meal");
+                        printf("\n\n                  THANK YOU......!");
+                        Sleep(10000);
+                        }
+                        else
+                        {
+                            printf("\nThe total order must be greater than Rs100 please order more\n");
+                            printf("\nPress 1 to order more");
+                            int z;
+                            scanf("%d",&z);
+                            if(z==1)
+                            {
+                                system("cls");
+                                orderdlist(&o);
+                                goto foodorder;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        goto afterorder;
+                    }
+                    break;
+                    case 2:if(o.link==NULL)
+                    {
+                        printf("\n\nYou not ordered any food");
+                        Sleep(2000);
+                        system("cls");
+                        goto mainmenu;
+                    }
+                    else
+                    {
+                        orderdlist(&o);
+                        printf("\n\n           The total bill: %0.2f",nbill(&o));
+                        printf("\n\n           The total amount to pay %0.2f",bill(&o,offer,pay));
+                        printf("\n\npress 1 to continue:");
+                        int e;
+                        scanf("%d",&e);
+                        if(e==1)
+                        {
+                            system("cls");
+                            goto mainmenu;
+                    }
+        }
+                }
+    }
+    else
+    {
+        printf("\n          Incorrect password or user name,try again\n");
+        printf("\n          Press 1 if you are new user otherwise 0 : ");
+        int f;
+        scanf("%d",&f);
+        if(f==1)
+        {
+            system("cls");
+            goto newuser;
+        }
+        else
+        {
+            system("cls");
+            goto login;
+        }
+    }
+    }
+    else if(ch==3)                                                 //Admin login
+    {
+        adminlogin:printf("\n   ********************   ADMIN   ********************");
+            printf("\n\n                     Enter username:");
+            scanf("%s",uid);
+            printf("\n\n                     Enter password:");
+            scanf("%s",pwd);
+        if(strcmp(uid,"admin")==0&&strcmp(pwd,"admin123")==0)
+        {
+            printf("\n                          WELCOME ADMIN");
+            Sleep(2000);
+            system("cls");
+            do
+            {
+            adminchoice :system("cls");
+            printf("\n1.View food list\n2.Add food to the menu\n3.Delete food from the menu\n4.Change offer\n5.view previous order\n6.Log out");
+            printf("\nEnter your choice: ");
+            scanf("%d",&adminch);
+            switch(adminch)
+            {
+                case 1: system("cls");//view menu
+                printf("\nVEG:\n");
+                display(&v);
+                Sleep(2000);
+                printf("\nNON-VEG:\n");
+                display(&n);
+                Sleep(2000);
+                printf("\nSNACKS:\n");
+                display(&s);
+                Sleep(2000);
+                printf("\npress 1 to continue:");
+                int c;
+                scanf("%d",&c);
+                if(c==1)
+                {
+                    system("cls");
+                    goto adminchoice;
+                }
+                break;
+                case 2:system("cls");       //to add food to menu
+                addmore:printf("What do you want to update?\n");
+                printf("\n1.Veg\n2.Non-veg\n3.Snacks\n");
+                printf("\nEnter your choice:");
+                int h;
+                scanf("%d",&h);
+                switch(h)
+                {
+                    case 1:printf("\nVEG:\n");
+                    display(&v);
+                    printf("\nEnter the food code of the food to add to menu:");
+                    foodcode: scanf("%d",&foodcode);
+                    printf("\nEnter the food name:");
+                    getchar();
+                    gets(foodname);
+                    printf("\nEnter the price:");
+                    scanf("%f",&price);
+                    printf("\nEnter the position to insert:");
+                    scanf("%d",&pos);
+                    insertatpos(&v,pos,foodcode,foodname,1,price);
+                    display(&v);
+                    break;
+
+                    case 2:printf("\nNON-VEG:\n");
+                    display(&n);
+                    printf("\nEnter the food code of the food to add to menu:");
+                    scanf("%d",&foodcode);
+                    printf("\nEnter the food name:");
+                    getchar();
+                    gets(foodname);
+                    printf("\nEnter the price:");
+                    scanf("%f",&price);
+                    printf("\nEnter the position to insert:");
+                    scanf("%d",&pos);
+                    insertatpos(&n,pos,foodcode,foodname,1,price);
+                    display(&n);
+                    break;
+
+                    case 3:printf("\nSNACKS:\n");
+                    display(&s);
+                    printf("\nEnter the food code of the food to add to menu:");
+                    scanf("%d",&foodcode);
+                    printf("\nEnter the food name:");
+                    getchar();
+                    gets(foodname);
+                    printf("\nEnter the price:");
+                    scanf("%f",&price);
+                    printf("\nEnter the position to insert:");
+                    scanf("%d",&pos);
+                    insertatpos(&s,pos,foodcode,foodname,1,price);
+                    display(&s);
+                    break;
+                }
+                printf("\nPress 1 if you want to add more food to menu otherwise 0:");
+                int d;
+                scanf("%d",&d);
+                if(d==1)
+                {
+                    system("cls");
+                    goto addmore;
+                }
+                break;
+                case 3 :system("cls"); //delete food from the menu
+                printf("\nWhich food you want to update?");
+                printf("\n1.Veg\n2.Non-veg\n3.Snacks\n");
+                printf("\nEnter your choice:");
+                int u;
+                scanf("%d",&u);
+                switch(u)
+                {
+                    case 1:printf("\nVEG:\n");
+                    display(&v);
+                    printf("\nEnter the food code to delete:");
+                    scanf("%d",&key);
+                    Deletefood(&v,key);
+                    display(&v);
+                    Sleep(3000);
+                    break;
+
+                    case 2:printf("\nNON-VEG:\n");
+                    display(&n);
+                    printf("\nEnter the food code to delete:");
+                    scanf("%d",&key);
+                    Deletefood(&n,key);
+                    display(&n);
+                    Sleep(2000);
+                    break;
+
+                    case 3:printf("\nSNACKS:\n");
+                    display(&s);
+                    printf("\nEnter the food code to delete:");
+                    scanf("%d",&key);
+                    Deletefood(&s,key);
+                    display(&s);
+                    Sleep(2000);
+                    break;
+                }
+                break;
+
+                    case 4:system("cls");// to change offer
+                    printf("\nEnter the offer in percentage:");
+                    scanf("%d",&offer);
+                    printf("\nWhat should be the minimum order for this offer:  ");
+                    scanf("%d",&pay);
+                    offe(offer,pay);
+                    bill(&o,offer,pay);
+                    Sleep(2000);
+                    system("cls");
+                    goto adminchoice;
+                    break;
+
+                    case 5:if(o.link==NULL) //to view previous ordered food
+                    {
+                        printf("\nNo one orderd yet");
+                        Sleep(1000);
+                    }
+                    else
+                    {
+                        printf("\n\nThe previous order done by: %s %s",cusfname,cuslname);
+                        orderdlist(&o);
+                        printf("\n\n           The total bill: %0.2f",nbill(&o));
+                        printf("\n\n           The total amount to pay %0.2f",bill(&o,offer,pay));
+                        printf("\n\nThe food should be delivered to:\n");
+                        printf("\n%s",cusaddress);
+                        printf("\n\nPress 1 to go back");
+                        int s;
+                        scanf("%d",&s);
+                        if(s==1)
+                        {
+                            system("cls");
+                            break;
+                        }
+                    }
+                default :printf("\nInvalid choice try again");
+            }
+        }while(adminch!=6);
+    }
+    else
+    {
+        printf("\nInvalid username or password try again ");
+    }
+}
+else if(ch==4)
+    exit(0);
+    else
+    {
+        system("cls");
+        goto mainscr;
+    }
+}
+}
